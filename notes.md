@@ -70,3 +70,12 @@ text only.
 With more than one delimiter, use the first delimiter to get the 0th element.
 
 Now I can get the text nodes from each string using split.
+
+### Re-creating the split string
+
+Once I have split the string using the link delimiter, I'm left with a problem.
+How do you put the nodes back together in the right order?
+
+I have a solution for the case where there is one link in the string. When there
+are multiple delimiters, I split the string with each one, and extract the text
+string, which is always the 0th element in the split string.

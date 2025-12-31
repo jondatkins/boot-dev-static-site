@@ -9,9 +9,11 @@ def main():
     test_string_4 = "This is text with a link [to boot dev](https://www.boot.dev) followed by more text"
     test_string_5 = "This is text with a link [to boot dev](https://www.boot.dev) followed by more text [to boot dev](https://www.boot.dev) and so on"
     test_string_6 = "[to boot dev](https://www.boot.dev) The link is at the start."
+    test_string_7 = "The link is at the end [to boot dev](https://www.boot.dev)"
+    test_string_8 = "[to boot dev](https://www.boot.dev) and [to youtube](https://www.youtube.com/@bootdotdev)"
     #
     node = TextNode(
-        test_string_4,
+        test_string_1,
         TextType.TEXT,
     )
     #
@@ -34,39 +36,6 @@ def main():
     # ]
 
 
-def split_nodes_delimiter_mine(old_nodes, delimiter, text_type):
-    split_strings = []
-    new_nodes = []
-    non_text_node_text = ""
-    for node in old_nodes:
-        if node.text_type != TextType.TEXT:
-            new_nodes.append(node)
-        else:
-            delimiter_positions = []
-            for i in range(1, len(node.text)):
-                if text_type == TextType.CODE or text_type == TextType.ITALIC:
-                    if node.text[i - 1] == delimiter:
-                        delimiter_positions.append(i - 1)
-                else:
-                    if node.text[i - 1] + node.text[i] == delimiter:
-                        delimiter_positions.append(i)
-            if len(delimiter_positions) != 2:
-                raise Exception("Invalid Markdown for " + node.text)
-            non_text_node_text = node.text[
-                delimiter_positions[0] + 1 : delimiter_positions[1]
-            ]
-            split_string_list = node.text.split(delimiter)
-            split_strings.extend(split_string_list)
-        for text in split_strings:
-            if text not in non_text_node_text:
-                text_node = TextNode(text, TextType.TEXT)
-                new_nodes.append(text_node)
-            else:
-                text_node = TextNode(text, text_type)
-                new_nodes.append(text_node)
-    return new_nodes
-
-
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
     new_nodes = []
     for old_node in old_nodes:
@@ -86,41 +55,6 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
                 split_nodes.append(TextNode(sections[i], text_type))
         new_nodes.extend(split_nodes)
     return new_nodes
-
-
-# Create a function extract_markdown_images(text) that takes
-# raw markdown text and returns a list of tuples. Each tuple
-# should contain the alt text and the URL of any markdown images
-def extract_markdown_images_old(text):
-    select_in_square_brackets = r"(?<=\!\[).+?(?=\])"
-    select_url_in_round_brackets = r"(?<=\()(https:?\/\/.*?)(?=\))"
-    alt_regex = r"\!\[[\w\s]+\]"
-    url_regex = r"\(https?:\/\/.*?\)"
-    regex = alt_regex + url_regex
-    image_info = re.findall(regex, text)
-
-    alt_and_url = []
-    for image in image_info:
-        alt = re.findall(select_in_square_brackets, image)[0]
-        url = re.findall(select_url_in_round_brackets, image)[0]
-        alt_and_url.append((alt, url))
-    return alt_and_url
-
-
-def extract_markdown_links_old(text):
-    select_in_square_brackets = r"(?<=\[).+?(?=\])"
-    select_url_in_round_brackets = r"(?<=\()(https:?\/\/.*?)(?=\))"
-    link_title_regex = r"\[[\w\s]+\]"
-    url_regex = r"\(https?:\/\/.*?\)"
-    regex = link_title_regex + url_regex
-    link_info = re.findall(regex, text)
-
-    alt_and_url = []
-    for image in link_info:
-        link_text = re.findall(select_in_square_brackets, image)[0]
-        url = re.findall(select_url_in_round_brackets, image)[0]
-        alt_and_url.append((link_text, url))
-    return alt_and_url
 
 
 def extract_markdown_images(text):
@@ -149,9 +83,23 @@ def split_nodes_link(old_nodes):
         if len(md_links) == 0:
             new_nodes.append(old_node)
             continue
+        # There is only one link in the old node
         elif len(md_links) == 1:
             delimiter = f"[{md_links[0][0]}]({md_links[0][1]})"
             split_string = old_node.text.split(delimiter, 1)
+            delim_index = old_node.text.find(delimiter)
+            link_node = TextNode(md_links[0][0], TextType.LINK, md_links[0][1])
+            for text_string in split_string:
+                if text_string != "":
+                    new_nodes.append(TextNode(text_string, TextType.TEXT))
+            if delim_index == 0:
+                new_nodes.insert(0, link_node)
+            # i.e. the delimiter is at the end of the string
+            elif delim_index == len(old_node.text) - (len(delimiter)):
+                new_nodes.append(link_node)
+            # The link must be between two text nodes
+            else:
+                new_nodes.insert(1, link_node)
 
         else:
             delimiters = []
@@ -160,10 +108,21 @@ def split_nodes_link(old_nodes):
                 delimiters.append(delim)
             text_strings = []
             node_string = old_node.text
-            for delim in delimiters:
+            for i in range(len(md_links)):
+                link = md_links[i]
+                delim = f"[{link[0]}]({link[1]})"
+                # split_string = re.split(r"(delim)", node_string)
                 split_string = node_string.split(delim, 1)
-                text_strings.append(split_string[0])
+                if len(split_string[0]) > 0:
+                    # text_strings.append(split_string[0])
+                    new_nodes.append(TextNode(split_string[0], TextType.TEXT))
+                # text_strings.append(delim)
+                # new_nodes.append(TextNode(delim, TextType.TEXT))
+                link_node = TextNode(link[0], TextType.LINK, link[1])
+                new_nodes.append(link_node)
                 node_string = split_string[1:][0]
+            print(old_node.text)
+            # print(text_strings)
 
     return new_nodes
 
