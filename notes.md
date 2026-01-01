@@ -79,3 +79,81 @@ How do you put the nodes back together in the right order?
 I have a solution for the case where there is one link in the string. When there
 are multiple delimiters, I split the string with each one, and extract the text
 string, which is always the 0th element in the split string.
+
+## Solution for image / link extraction
+
+My fix was to grab the text from the old node, having extracted the image data,
+and then create the delimiter based on this, i.e. wrap the alt text in ![] etc.
+If you split the string using this delimiter, and '1' you should get a two
+length array. The 0th element will be a normal text string, which could be an
+empty string '', so check for this. The image node will be the 'ith' element in
+your list of image tuples, so just create the node and append it. You now have
+to remember to update the node string to exclude what you just added, so
+everything from 1 to the end of the array.
+
+```python
+def split_nodes_link(old_nodes):
+    new_nodes = []
+    for old_node in old_nodes:
+        if old_node.text_type != TextType.TEXT:
+            new_nodes.append(old_node)
+            continue
+        md_links = extract_markdown_links(old_node.text)
+        if len(md_links) == 0:
+            new_nodes.append(old_node)
+            continue
+        node_string = old_node.text
+        for i in range(len(md_links)):
+            link = md_links[i]
+            delim = f"[{link[0]}]({link[1]})"
+            split_string = node_string.split(delim, 1)
+            if len(split_string) != 2:
+                raise ValueError("invalid markdown, image section not closed")
+            if len(split_string[0]) > 0:
+                new_nodes.append(TextNode(split_string[0], TextType.TEXT))
+            link_node = TextNode(link[0], TextType.LINK, link[1])
+            new_nodes.append(link_node)
+            node_string = split_string[1:][0]
+        if len(node_string) > 0:
+            new_nodes.append(TextNode(node_string, TextType.TEXT))
+    return new_nodes
+```
+
+There's no reason for the 'for i in range' loop, so this is just a 'for in'
+loop now. The second if check in the loop checks the length of the first string.
+This makes sense, but you can just check for an empty string here, which is more
+clear. The assignment to node_string is too complicated. This value will be just
+the 2nd element, or 1th index in the split string array, which we now know must
+have 2 elements, so just grab this, there's no need for list slicing here.
+
+### Course solution
+
+The course solution ditches the count index, and uses a simple for loop.
+
+```python
+def split_nodes_link_course(old_nodes):
+    new_nodes = []
+    for old_node in old_nodes:
+        if old_node.text_type != TextType.TEXT:
+            new_nodes.append(old_node)
+            continue
+        original_text = old_node.text
+        links = extract_markdown_links(original_text)
+        if len(links) == 0:
+            new_nodes.append(old_node)
+            continue
+        for link in links:
+            sections = original_text.split(f"[{link[0]}]({link[1]})", 1)
+            if len(sections) != 2:
+                raise ValueError("invalid markdown, link section not closed")
+            if sections[0] != "":
+                new_nodes.append(TextNode(sections[0], TextType.TEXT))
+            new_nodes.append(TextNode(link[0], TextType.LINK, link[1]))
+            original_text = sections[1]
+        if original_text != "":
+            new_nodes.append(TextNode(original_text, TextType.TEXT))
+    return new_nodes
+
+```
+
+### Text to text nodes
