@@ -1,22 +1,36 @@
+from htmlnode import HTMLNode
+from parentnode import ParentNode
 from textnode import TextNode, TextType
+from leafnode import LeafNode
 import re
 from enum import Enum
 
 
 def main():
-    heading = "# A heading"
-    not_heading = "#Not a heading"
-    not_heading_2 = "# Not a heading"
-    code = "``` foobar ```"
-    quote = "> foobar foo bar"
-    not_a_quote = ">a quote"
-    unordered_list = "- item x\n- item y"
-    not_unordered_list = "-item x\n- item y"
-    ordered_list = "1. List Item 1\n2. List Item 2"
-    not_ordered_list = "1. List Item 1\n2.List Item 2"
+    md = """
+        This is **bolded** paragraph
+        text in a p
+        tag here
 
-    code_2 = "```\n print('foo')\n ```"
-    # print(block_to_block_type(not_a_quote))
+        This is another paragraph with _italic_ text and `code` here
+
+        """
+    md_short = """
+        This is **bolded** paragraph
+        text in a p
+        tag here
+
+        """
+    should_be_1 = "<div><p>This is <b>bolded</b> paragraph text in a p tag here</p><p>This is another paragraph with <i>italic</i> text and <code>code</code> here</p></div>"
+    should_be = "<div><p>This is <b>bolded</b> paragraph text in a p tag here</p>div>"
+
+    print(f"1: {should_be_1}")
+    node = markdown_to_html_node(md)
+    # html = node.to_html()
+    # print(node)
+    if node is not None:
+        html = node.to_html()
+        print(f"2: {html}")
 
 
 class BlockType(Enum):
@@ -28,34 +42,72 @@ class BlockType(Enum):
     ORDERED_LIST = "ordered_list"
 
 
-def block_to_block_type(block_text):
-    heading_pattern = r"^(#{1,6}) ([^\r\n]*)\r?$"
-    code_pattern = r"```[\s\S]*?```"
-    quote_pattern = r"> .+"
-    unordered_list_pattern = r"- (.+)"
-    ordered_list_pattern = r"[0-9]{0,9}\. (.+)"
-    if re.search(heading_pattern, block_text):
-        return BlockType.HEADING
-    elif re.search(code_pattern, block_text):
-        return BlockType.CODE
-    elif re.search(quote_pattern, block_text):
-        return BlockType.QUOTE
-    elif re.search(unordered_list_pattern, block_text):
-        lines = block_text.split("\n")
-        for line in lines:
-            if not re.search(unordered_list_pattern, line):
-                return BlockType.PARAGRAPH
-        return BlockType.UNORDERED_LIST
-    elif re.search(ordered_list_pattern, block_text):
-        lines = block_text.split("\n")
-        for line in lines:
-            if not re.search(ordered_list_pattern, line):
-                return BlockType.PARAGRAPH
-        return BlockType.ORDERED_LIST
-    return BlockType.PARAGRAPH
+# Split the markdown into blocks (you already have a function for this)
+# Loop over each block:
+#
+#     Determine the type of block (you already have a function for this)
+#     Based on the type of block, create a new HTMLNode with the proper data
+#     Assign the proper child HTMLNode objects to the block node. I created
+#     a shared text_to_children(text) function that works for all block types.
+#     It takes a string of text and returns a list of HTMLNodes that represent
+#     the inline markdown using previously created functions (think TextNode -> HTMLNode).
+#     The "code" block is a bit of a special case: it should not do any inline markdown
+#     parsing of its children. I didn't use my text_to_children function for this block
+#     type, I manually made a TextNode and used text_node_to_html_node.
+#
+# Make all the block nodes children under a single parent HTML node (which should just be a div) and return it.
+def markdown_to_html_node(markdown):
+    blocks = markdown_to_blocks(markdown)
+    html_nodes = []
+    for block in blocks:
+        block_type = block_to_block_type(block)
+        # nodes = text_to_textnodes(block)
+        # block = block.replace("\n", "")
+        block_text = block.split("\n")
+
+        block_text = list(map(str.strip, block_text))
+        block = " ".join(block_text)
+        if block_type is BlockType.PARAGRAPH:
+            text_nodes = text_to_children(block)
+            child_nodes = []
+            paragraph_text = ""
+            for node in text_nodes:
+                if node.tag is not None:
+                    child_nodes.append(node)
+                    paragraph_text += node.to_html()
+                else:
+                    paragraph_text += node.value
+
+            html_node = LeafNode("p", paragraph_text)
+            html_nodes.append(html_node)
+            # print(html_node)
+        elif block_type is BlockType.HEADING:
+            html_node = HTMLNode("p", [], {})
+        elif block_type is BlockType.CODE:
+            html_node = HTMLNode("p", [], {})
+        elif block_type is BlockType.QUOTE:
+            html_node = HTMLNode("p", [], {})
+        elif block_type is BlockType.UNORDERED_LIST:
+            html_node = HTMLNode("p", [], {})
+        elif block_type is BlockType.ORDERED_LIST:
+            html_node = HTMLNode("p", [], {})
+    parent_html_node = ParentNode("div", html_nodes)
+    return parent_html_node
 
 
-def block_to_block_type_course(block):
+#     It takes a string of text and returns a list of HTMLNodes that represent
+#     the inline markdown using previously created functions (think TextNode -> HTMLNode).
+def text_to_children(text):
+    nodes = text_to_textnodes(text)
+    html_nodes = []
+    for node in nodes:
+        html_nodes.append(node.text_node_to_html_node())
+
+    # print(nodes)
+    return html_nodes
+
+
+def block_to_block_type(block):
     lines = block.split("\n")
 
     if block.startswith(("# ", "## ", "### ", "#### ", "##### ", "###### ")):
@@ -71,14 +123,14 @@ def block_to_block_type_course(block):
         for line in lines:
             if not line.startswith("- "):
                 return BlockType.PARAGRAPH
-        return BlockType.ULIST
+        return BlockType.UNORDERED_LIST
     if block.startswith("1. "):
         i = 1
         for line in lines:
             if not line.startswith(f"{i}. "):
                 return BlockType.PARAGRAPH
             i += 1
-        return BlockType.OLIST
+        return BlockType.ORDERED_LIST
     return BlockType.PARAGRAPH
 
 
@@ -181,6 +233,28 @@ def text_to_textnodes(text):
     nodes = split_nodes_link(nodes)
     nodes = split_nodes_image(nodes)
     return nodes
+
+
+# def text_node_to_html_node(text_node):
+#     if text_node.text_type is TextType.TEXT:
+#         leaf_node = LeafNode(None, text_node.text)
+#         return leaf_node
+#     if text_node.text_type is TextType.BOLD:
+#         leaf_node = LeafNode("b", text_node.text)
+#         return leaf_node
+#     if text_node.text_type is TextType.ITALIC:
+#         leaf_node = LeafNode("i", text_node.text)
+#         return leaf_node
+#     if text_node.text_type is TextType.CODE:
+#         leaf_node = LeafNode("code", text_node.text)
+#         return leaf_node
+#     if text_node.text_type is TextType.LINK:
+#         leaf_node = LeafNode("a", text_node.text, {"href": text_node.url})
+#         return leaf_node
+#     if text_node.text_type is TextType.IMAGE:
+#         leaf_node = LeafNode("img", "", {"src": text_node.url, "alt": text_node.text})
+#         return leaf_node
+#
 
 
 def markdown_to_blocks(markdown):

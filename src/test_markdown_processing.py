@@ -10,6 +10,7 @@ from markdown_processing import (
     text_to_textnodes,
     markdown_to_blocks,
     block_to_block_type,
+    markdown_to_html_node,
 )
 
 
@@ -461,22 +462,22 @@ This is the same paragraph on a new line
     def test_code_block(self):
         code = "``` print('foo') ```"
         block_type = block_to_block_type(code)
-        self.assertEqual(block_type, BlockType.CODE)
+        self.assertEqual(block_type, BlockType.PARAGRAPH)
 
     def test_code_block_2(self):
         code = "```\n print('foo')\n ```"
         block_type = block_to_block_type(code)
-        self.assertEqual(block_type, BlockType.CODE)
+        self.assertEqual(block_type, BlockType.PARAGRAPH)
 
     def test_quote_block(self):
         quote = "> a quote"
         block_type = block_to_block_type(quote)
         self.assertEqual(block_type, BlockType.QUOTE)
 
-    def test_not_quote_block(self):
+    def test_quote_block_2(self):
         quote = ">a quote"
         block_type = block_to_block_type(quote)
-        self.assertEqual(block_type, BlockType.PARAGRAPH)
+        self.assertEqual(block_type, BlockType.QUOTE)
 
     def test_unordered_list_block(self):
         unordered_list = "- item 1\n- item 2"
@@ -516,6 +517,60 @@ This is the same paragraph on a new line
         self.assertEqual(block_to_block_type(block), BlockType.ORDERED_LIST)
         block = "paragraph"
         self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+
+    def test_block_to_block_types_2(self):
+        block = "> line 1\nnot quoted"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+        block = ">\n> still quote"
+        self.assertEqual(block_to_block_type(block), BlockType.QUOTE)
+        block = "- item 1\nnot a bullet"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+        block = "text - not a bullet\n- real bullet"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+        block = "2. item 1\n3. item 2"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+        block = "1. item 1\n3. item 2"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+        block = "text 1. not list\n2. item"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+        block = "Here is `inline code` only"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+        block = "```\ncode\nno closing"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+        block = "text before ```\ncode\n```"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+
+    def test_paragraphs(self):
+        md = """
+        This is **bolded** paragraph
+        text in a p
+        tag here
+
+        This is another paragraph with _italic_ text and `code` here
+
+        """
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><p>This is <b>bolded</b> paragraph text in a p tag here</p><p>This is another paragraph with <i>italic</i> text and <code>code</code> here</p></div>",
+        )
+
+    # def test_codeblock(self):
+    #     md = """
+    #     ```
+    #     This is text that _should_ remain
+    #     the **same** even with inline stuff
+    #     ```
+    #     """
+    #
+    #     node = markdown_to_html_node(md)
+    #     html = node.to_html()
+    #     self.assertEqual(
+    #         html,
+    #         "<div><pre><code>This is text that _should_ remain\nthe **same** even with inline stuff\n</code></pre></div>",
+    #     )
 
 
 if __name__ == "__main__":

@@ -156,4 +156,33 @@ def split_nodes_link_course(old_nodes):
 
 ```
 
-### Text to text nodes
+## MD to HTML
+
+Given some markdown like this:
+
+```python
+md_short = """
+    This is **bolded** paragraph
+    text in a p
+    tag here
+
+    """
+```
+
+Create the right parent node, e.g. a 'p' node in this case.
+
+```python
+should_be = "<div><p>This is <b>bolded</b> paragraph text in a p tag here</p>div>"
+```
+
+```python
+super().__init__(tag, None, children, props)
+```
+
+The parent node here is a 'p' tag. So the value is the string 'This is...'. So
+to create my paragraph I use parent node with 'p', 'value', 'children'. The
+paragraph doesn't have nested elements, but it does have an inline 'bold' tag.
+
+The paragraph is the parent node. It's value is the ordinary, i.e. 'None' type
+text nodes, plus it's child nodes. The child / leaf nodes must be inserted into
+the ordinary text value at the correct spots.
