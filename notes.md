@@ -179,10 +179,27 @@ should_be = "<div><p>This is <b>bolded</b> paragraph text in a p tag here</p>div
 super().__init__(tag, None, children, props)
 ```
 
-The parent node here is a 'p' tag. So the value is the string 'This is...'. So
-to create my paragraph I use parent node with 'p', 'value', 'children'. The
-paragraph doesn't have nested elements, but it does have an inline 'bold' tag.
+For the paragraph example, you create a parent node with a 'p' tag. The parent
+node has no value, do not try to create a html string for it. The 'p' tag has
+child nodes, these are leaf nodes. Some are normal text, some are bold, italic,
+or underlined. For example:
 
-The paragraph is the parent node. It's value is the ordinary, i.e. 'None' type
-text nodes, plus it's child nodes. The child / leaf nodes must be inserted into
-the ordinary text value at the correct spots.
+```python
+node = ParentNode(
+    "p",
+    [
+        LeafNode("b", "Bold text"),
+        LeafNode(None, "Normal text"),
+        LeafNode("i", "italic text"),
+        LeafNode(None, "Normal text"),
+    ],
+)
+
+node.to_html()
+```
+
+becomes:
+
+```html
+<p><b>Bold text</b>Normal text<i>italic text</i>Normal text</p>
+```
