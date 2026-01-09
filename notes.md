@@ -203,3 +203,7 @@ becomes:
 ```html
 <p><b>Bold text</b>Normal text<i>italic text</i>Normal text</p>
 ```
+
+## Recursive file copying
+
+I loop over the contents of the src directory.

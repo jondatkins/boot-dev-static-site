@@ -12,6 +12,7 @@ from markdown_processing import (
     block_to_block_type,
     markdown_to_html_node,
 )
+from main import extract_title
 
 
 class TestSplitNode(unittest.TestCase):
@@ -724,6 +725,10 @@ the **same** even with inline stuff
             html,
             "<div><pre><code>This is text that _should_ remain\nthe **same** even with inline stuff\n</code></pre></div>",
         )
+
+    def test_extract_title(self):
+        hello_title = extract_title("# Hello")
+        self.assertEqual(hello_title, "Hello")
 
 
 if __name__ == "__main__":
