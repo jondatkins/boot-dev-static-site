@@ -730,6 +730,21 @@ the **same** even with inline stuff
         hello_title = extract_title("# Hello")
         self.assertEqual(hello_title, "Hello")
 
+    def test_extract_title_many_lines(self):
+        hello_title = extract_title("Hello\n World \n #  Hello")
+        self.assertEqual(hello_title, "Hello")
+
+    def test_extract_title_no_whitespace(self):
+        hello_title = extract_title(" # Hello  ")
+        self.assertEqual(hello_title, "Hello")
+
+    def test_extract_title_no_heading(self):
+        with self.assertRaises(Exception) as cm:
+            extract_title("Hello")
+        self.assertEqual(
+            str(cm.exception), "Heading 1 '# ' not found for markdown: Hello"
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

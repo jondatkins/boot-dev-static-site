@@ -102,69 +102,6 @@ def block_to_html_node(block):
     raise ValueError("invalid block type")
 
 
-def markdown_to_html_node_mine(markdown):
-    blocks = markdown_to_blocks(markdown)
-    html_nodes = []
-    for block in blocks:
-        block_type = block_to_block_type(block)
-        # nodes = text_to_textnodes(block)
-        # block = block.replace("\n", "")
-        if block_type is BlockType.PARAGRAPH:
-            block_text = block.split("\n")
-            block_text = list(map(str.strip, block_text))
-            block = " ".join(block_text)
-            child_nodes = text_to_children(block)
-            paragraph_node = ParentNode("p", child_nodes)
-            html_nodes.append(paragraph_node)
-        elif block_type is BlockType.HEADING:
-            header_text = block.replace("#", "")
-            child_nodes = text_to_children(header_text)
-            num_hashes = 0
-            for char in block:
-                if char == "#":
-                    num_hashes += 1
-            heading_node = ParentNode(f"h{num_hashes}", child_nodes)
-            html_nodes.append(heading_node)
-        elif block_type is BlockType.CODE:
-            block = block.replace("```", "")
-            block = block.lstrip("\n")
-            code_node = LeafNode("code", block)
-            pre_node = ParentNode("pre", [code_node], {})
-            html_nodes.append(pre_node)
-        elif block_type is BlockType.QUOTE:
-            # remove angle bracket
-            quote_text = block[1:]
-            # remove white space
-            quote_text = quote_text.lstrip()
-            child_nodes = text_to_children(quote_text)
-            quote_node = ParentNode("blockquote", child_nodes)
-            html_nodes.append(quote_node)
-        elif block_type is BlockType.UNORDERED_LIST:
-            block = block.replace("-", "")
-            list_items = block.split("\n")
-            li_nodes = []
-            for item in list_items:
-                item = item.strip()
-                child_nodes = text_to_children(item)
-                li_nodes.append(ParentNode("li", child_nodes))
-            ul_node = ParentNode("ul", li_nodes)
-            html_nodes.append(ul_node)
-        elif block_type is BlockType.ORDERED_LIST:
-            block = block.replace("-", "")
-            list_items = block.split("\n")
-            li_nodes = []
-            for item in list_items:
-                # remove '1. 2. etc' from start of string
-                item = item[2:]
-                item = item.strip()
-                child_nodes = text_to_children(item)
-                li_nodes.append(ParentNode("li", child_nodes))
-            ul_node = ParentNode("ol", li_nodes)
-            html_nodes.append(ul_node)
-    parent_html_node = ParentNode("div", html_nodes)
-    return parent_html_node
-
-
 def text_to_children(text):
     text_nodes = text_to_textnodes(text)
     child_nodes = []
@@ -342,28 +279,6 @@ def text_to_textnodes(text):
     nodes = split_nodes_link(nodes)
     nodes = split_nodes_image(nodes)
     return nodes
-
-
-# def text_node_to_html_node(text_node):
-#     if text_node.text_type is TextType.TEXT:
-#         leaf_node = LeafNode(None, text_node.text)
-#         return leaf_node
-#     if text_node.text_type is TextType.BOLD:
-#         leaf_node = LeafNode("b", text_node.text)
-#         return leaf_node
-#     if text_node.text_type is TextType.ITALIC:
-#         leaf_node = LeafNode("i", text_node.text)
-#         return leaf_node
-#     if text_node.text_type is TextType.CODE:
-#         leaf_node = LeafNode("code", text_node.text)
-#         return leaf_node
-#     if text_node.text_type is TextType.LINK:
-#         leaf_node = LeafNode("a", text_node.text, {"href": text_node.url})
-#         return leaf_node
-#     if text_node.text_type is TextType.IMAGE:
-#         leaf_node = LeafNode("img", "", {"src": text_node.url, "alt": text_node.text})
-#         return leaf_node
-#
 
 
 main()

@@ -7,24 +7,99 @@ import os
 import shutil
 
 from pathlib import Path
+from markdown_processing import markdown_to_html_node
 
-
+BASE_DIR = Path(__file__).resolve().parent.parent
 SRC_DIR = "static"
 DEST_DIR = "public"
+PROJECT_ROOT_NAME = "static_site"
 
 
 def main():
     copy_source_to_public()
+    markdown_files = [
+        "",
+        "blog/glorfindel/",
+        "blog/tom/",
+        "blog/majesty/",
+        "contact/",
+    ]
+    for file_path in markdown_files:
+        generate_page(
+            f"{BASE_DIR}/content/{file_path}index.md",
+            f"{BASE_DIR}/template.html",
+            f"{BASE_DIR}/public/{file_path}index.html",
+        )
 
 
 def extract_title(markdown):
-    pass
+    lines = markdown.split("\n")
+    heading_one = []
+    for line in lines:
+        line = line.strip()
+        if line.startswith(("# ")):
+            heading_one = line.split("# ", 1)
+            if len(heading_one) != 2:
+                raise ValueError(f"Heading 1 '# ' not found for markdown: {markdown}")
+            return heading_one[1].strip()
+    raise ValueError(f"Heading 1 '# ' not found for markdown: {markdown}")
+
+
+def generate_page(from_path, template_path, dest_path):
+    #  Print a message like "Generating page from from_path to dest_path using template_path".
+    print(f"Generating page from {from_path} to {dest_path} using {template_path}")
+
+    # Read the markdown file at from_path and store the contents in a variable.
+
+    markdown_file = read_file(from_path)
+
+    # Read the template file at template_path and store the contents in a variable.
+    template_file = read_file(template_path)
+
+    # Use your markdown_to_html_node function and .to_html() method to convert the markdown file to an HTML string.
+    markdown_html = markdown_to_html_node(markdown_file).to_html()
+    markdown_html = f"<html>{markdown_html}</html>"
+    # Use the extract_title function to grab the title of the page.
+    page_title = extract_title(markdown_file)
+    # Replace the {{ Title }} and {{ Content }} placeholders in the template with the HTML and title you generated.
+    markdown_html.replace("{{ Title }}", page_title)
+    markdown_html.replace("{{ Content }}", markdown_html)
+    # Write the new full HTML page to a file at dest_path. Be sure to create any necessary directories if they don't exist.
+    dest_dirs = dest_path.split(PROJECT_ROOT_NAME, 1)
+    # Just get the directories inside the project folder
+    project_dirs = dest_dirs[1]
+    root_dirs = dest_dirs[0] + PROJECT_ROOT_NAME
+    project_dirs = project_dirs.split("/")
+    project_dirs = project_dirs[1:-1]
+    full_dir_path = root_dirs
+    # Make sure that directories exist. Could just use makedirs
+    for dir in project_dirs:
+        if dir == "":
+            continue
+        full_dir_path = f"{full_dir_path}/{dir}"
+        if not os.path.exists(full_dir_path):
+            os.mkdir(full_dir_path)
+
+    # shutil.copy(markdown_html, dest_path)
+    write_file(markdown_html, dest_path)
+
+
+def read_file(file_path):
+    with open(file_path, encoding="utf-8") as f:
+        read_data = f.read()
+    f.closed
+    return read_data
+
+
+def write_file(file_contents, dest_path):
+    # lines = ["First line\n", "Second line\n", "Third line\n"]
+    with open(dest_path, "w") as f:
+        f.writelines(file_contents)
 
 
 def copy_source_to_public():
-    base_dir = Path(__file__).resolve().parent.parent
-    source = base_dir / SRC_DIR
-    dest = base_dir / DEST_DIR
+    source = BASE_DIR / SRC_DIR
+    dest = BASE_DIR / DEST_DIR
     if os.path.exists(dest):
         shutil.rmtree(dest)
     os.mkdir(dest)
