@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-python3 src/main.py "https://github.com/boot-dev-static-site/"
+python3 src/main.py "/boot-dev-static-site/"
