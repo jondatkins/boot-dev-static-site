@@ -208,3 +208,5 @@ becomes:
 
 I loop over the contents of the src directory.
 <https://jondatkins.github.io/boot-dev-static-site>
+<https://USERNAME.github.io/REPO_NAME/>
+<https://github.com/jondatkins/boot-dev-static-site>

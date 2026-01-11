@@ -97,8 +97,8 @@ def generate_page(from_path, template_path, dest_path, basepath):
     # Replace the {{ Title }} and {{ Content }} placeholders in the template with the HTML and title you generated.
     template_html = template_html.replace("{{ Title }}", page_title)
     template_html = template_html.replace("{{ Content }}", markdown_html)
-    template_html = template_html.replace('href="/', f'href="{basepath}"')
-    template_html = template_html.replace('src="/', f'src="{basepath}"')
+    template_html = template_html.replace('href="/', f'href="{basepath}')
+    template_html = template_html.replace('src="/', f'src="{basepath}')
     # Write the new full HTML page to a file at dest_path. Be sure to create any necessary directories if they don't exist.
     dest_dirs = dest_path.split(PROJECT_ROOT_NAME, 1)
     # Just get the directories inside the project folder
